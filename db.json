@@ -1,0 +1,13 @@
+{
+  "users": [
+    {
+      "_id": "1763716649507farib3dpj",
+      "username": "test",
+      "email": "test@test.com",
+      "accountname": "test1234",
+      "intro": "",
+      "image": "",
+      "password": "123456"
+    }
+  ]
+}
