@@ -1,9 +1,22 @@
 const express = require("express");
 const jsonServer = require("json-server");
+const jwt = require("jsonwebtoken");
 const path = require("path");
 
 const app = express();
 const PORT = 3000;
+
+// ============================================
+// JWT 설정
+// ============================================
+const JWT_CONFIG = {
+  ACCESS_TOKEN_SECRET:
+    process.env.ACCESS_TOKEN_SECRET || "your-access-token-secret-key",
+  REFRESH_TOKEN_SECRET:
+    process.env.REFRESH_TOKEN_SECRET || "your-refresh-token-secret-key",
+  ACCESS_TOKEN_EXPIRES_IN: "1h", // 1시간
+  REFRESH_TOKEN_EXPIRES_IN: "1d", // 1일
+};
 
 // ============================================
 // json-server 설정
@@ -31,6 +44,32 @@ function isValidAccountname(accountname) {
 // 고유 ID 생성
 function generateId() {
   return Date.now().toString() + Math.random().toString(36).substr(2, 9);
+}
+
+// JWT 토큰 생성 함수
+function generateToken(user, tokenType = "access") {
+  const isAccessToken = tokenType === "access";
+
+  const payload = isAccessToken
+    ? {
+        _id: user._id,
+        email: user.email,
+        accountname: user.accountname,
+      }
+    : {
+        _id: user._id,
+        email: user.email,
+      };
+
+  const secret = isAccessToken
+    ? JWT_CONFIG.ACCESS_TOKEN_SECRET
+    : JWT_CONFIG.REFRESH_TOKEN_SECRET;
+
+  const expiresIn = isAccessToken
+    ? JWT_CONFIG.ACCESS_TOKEN_EXPIRES_IN
+    : JWT_CONFIG.REFRESH_TOKEN_EXPIRES_IN;
+
+  return jwt.sign(payload, secret, { expiresIn });
 }
 
 // ============================================
@@ -151,21 +190,87 @@ apiRouter.post("/user", (req, res) => {
   }
 });
 
-apiRouter.get("/user", (req, res) => {
-  return res.status(200).json({
-    message: "회원가입 성공",
-  });
+/**
+ * POST /api/user/signin - 로그인 API
+ *
+ * Request Body:
+ * {
+ *   "user": {
+ *     "email": String (required),
+ *     "password": String (required)
+ *   }
+ * }
+ */
+apiRouter.post("/user/signin", (req, res) => {
+  try {
+    const { user } = req.body;
+
+    // 1. 입력값 검증
+    const hasEmail = user && user.email;
+    const hasPassword = user && user.password;
+
+    // email과 password 둘 다 없을 때
+    if (!hasEmail && !hasPassword) {
+      return res.status(400).json({
+        message: "이메일 또는 비밀번호를 입력해주세요.",
+      });
+    }
+
+    // email만 없을 때
+    if (!hasEmail) {
+      return res.status(400).json({
+        message: "이메일을 입력해주세요.",
+      });
+    }
+
+    // password만 없을 때
+    if (!hasPassword) {
+      return res.status(400).json({
+        message: "비밀번호를 입력해주세요.",
+      });
+    }
+
+    // json-server의 lowdb 인스턴스를 통한 DB 접근
+    const db = router.db;
+
+    // 2. 이메일로 사용자 찾기
+    const foundUser = db.get("users").find({ email: user.email }).value();
+
+    // 3. 사용자가 없거나 비밀번호가 일치하지 않을 때
+    if (!foundUser || foundUser.password !== user.password) {
+      return res.status(422).json({
+        message: "이메일 또는 비밀번호가 일치하지 않습니다.",
+        status: 422,
+      });
+    }
+
+    // 4. 로그인 성공 - JWT 토큰 생성
+    const accessToken = generateToken(foundUser, "access");
+    const refreshToken = generateToken(foundUser, "refresh");
+
+    // 5. 성공 응답 (password 제외, accessToken과 refreshToken 포함)
+    res.status(200).json({
+      user: {
+        _id: foundUser._id,
+        username: foundUser.username,
+        email: foundUser.email,
+        accountname: foundUser.accountname,
+        image: foundUser.image,
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+      },
+    });
+  } catch (error) {
+    console.error("로그인 오류:", error);
+    res.status(500).json({
+      message: "서버 오류가 발생했습니다.",
+    });
+  }
 });
 
 // ============================================
 // json-server 라우터 (REST API 자동 생성)
 // ============================================
-// GET    /api/users       - 모든 사용자 조회
-// GET    /api/users/:id   - 특정 사용자 조회
-// POST   /api/users       - 사용자 생성 (json-server 기본)
-// PUT    /api/users/:id   - 사용자 수정
-// PATCH  /api/users/:id   - 사용자 부분 수정
-// DELETE /api/users/:id   - 사용자 삭제
 apiRouter.use(router);
 
 // ============================================
@@ -179,11 +284,4 @@ app.use("/api", apiRouter);
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
   console.log(`📚 Available API endpoints:`);
-  console.log(`   POST   http://localhost:${PORT}/api/user (Custom signup)`);
-  console.log(`   GET    http://localhost:${PORT}/api/users`);
-  console.log(`   GET    http://localhost:${PORT}/api/users/:id`);
-  console.log(`   POST   http://localhost:${PORT}/api/users`);
-  console.log(`   PUT    http://localhost:${PORT}/api/users/:id`);
-  console.log(`   PATCH  http://localhost:${PORT}/api/users/:id`);
-  console.log(`   DELETE http://localhost:${PORT}/api/users/:id`);
 });
