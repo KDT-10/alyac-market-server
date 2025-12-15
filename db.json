@@ -7,7 +7,22 @@
       "accountname": "test1234",
       "intro": "",
       "image": "",
-      "password": "123456"
+      "password": "123456",
+      "following": [
+        "17657679824677clk03oii"
+      ]
+    },
+    {
+      "_id": "17657679824677clk03oii",
+      "username": "test1",
+      "email": "test1@test.com",
+      "accountname": "test12345",
+      "intro": "",
+      "image": "",
+      "password": "123456",
+      "follower": [
+        "1763716649507farib3dpj"
+      ]
     }
   ]
 }
