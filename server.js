@@ -1941,6 +1941,275 @@ apiRouter.get("/post", (req, res) => {
   }
 });
 
+/**
+ * POST /api/post/:post_id/heart - 게시글 좋아요 API
+ *
+ * Headers:
+ * {
+ *   "Authorization": "Bearer {accessToken}"
+ * }
+ *
+ * URL Parameters:
+ * - post_id: 좋아요할 게시글 ID
+ */
+apiRouter.post("/post/:post_id/heart", (req, res) => {
+  try {
+    // 1. Authorization 헤더에서 토큰 추출 및 검증
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        message: "인증 토큰이 필요합니다.",
+      });
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+
+    if (!decoded) {
+      return res.status(401).json({
+        message: "유효하지 않은 토큰입니다.",
+      });
+    }
+
+    const { post_id } = req.params;
+
+    // 2. DB에서 게시글 조회
+    const db = router.db;
+    const post = db.get("posts").find({ id: post_id }).value();
+
+    // 3. 게시글이 존재하지 않을 때
+    if (!post) {
+      return res.status(404).json({
+        message: "존재하지 않는 게시글입니다.",
+      });
+    }
+
+    // 4. 현재 사용자 정보 조회
+    const currentUser = db.get("users").find({ _id: decoded._id }).value();
+
+    if (!currentUser) {
+      return res.status(404).json({
+        message: "사용자를 찾을 수 없습니다.",
+      });
+    }
+
+    // 5. 이미 좋아요한 게시글인지 확인
+    const existingHeart = db
+      .get("hearts")
+      .find({ postId: post_id, userId: decoded._id })
+      .value();
+
+    let hearted = false;
+    let heartCount = post.heartCount || 0;
+
+    if (existingHeart) {
+      // 이미 좋아요한 경우 - 좋아요 취소
+      db.get("hearts").remove({ postId: post_id, userId: decoded._id }).write();
+
+      heartCount = Math.max(0, heartCount - 1);
+      hearted = false;
+    } else {
+      // 좋아요 추가
+      const newHeart = {
+        id: generateId(),
+        postId: post_id,
+        userId: decoded._id,
+        createdAt: new Date().toISOString(),
+      };
+
+      db.get("hearts").push(newHeart).write();
+
+      heartCount = heartCount + 1;
+      hearted = true;
+    }
+
+    // 6. 게시글의 heartCount 업데이트
+    db.get("posts")
+      .find({ id: post_id })
+      .assign({ heartCount: heartCount, hearted: hearted })
+      .write();
+
+    // 7. 업데이트된 게시글 조회
+    const updatedPost = db.get("posts").find({ id: post_id }).value();
+
+    // 8. 작성자 정보 조회
+    const author = db.get("users").find({ _id: updatedPost.authorId }).value();
+
+    if (!author) {
+      return res.status(404).json({
+        message: "작성자를 찾을 수 없습니다.",
+      });
+    }
+
+    // 9. author 정보 구성
+    const currentUserFollowing = currentUser.following || [];
+    const authorFollowing = author.following || [];
+    const authorFollower = author.follower || [];
+    const isfollow = currentUserFollowing.includes(author._id);
+
+    const postDetail = {
+      id: updatedPost.id,
+      content: updatedPost.content,
+      image: updatedPost.image,
+      createdAt: updatedPost.createdAt,
+      updatedAt: updatedPost.updatedAt,
+      hearted: hearted,
+      heartCount: heartCount,
+      commentCount: updatedPost.commentCount,
+      author: {
+        _id: author._id,
+        username: author.username,
+        accountname: author.accountname,
+        intro: author.intro || "",
+        image: author.image || "",
+        isfollow: isfollow,
+        following: authorFollowing,
+        follower: authorFollower,
+        followerCount: authorFollower.length,
+        followingCount: authorFollowing.length,
+      },
+    };
+
+    // 10. 성공 응답
+    res.status(200).json({
+      post: postDetail,
+    });
+  } catch (error) {
+    console.error("게시글 좋아요 오류:", error);
+    res.status(500).json({
+      message: "서버 오류가 발생했습니다.",
+    });
+  }
+});
+
+/**
+ * DELETE /api/post/:post_id/unheart - 게시글 좋아요 취소 API
+ *
+ * Headers:
+ * {
+ *   "Authorization": "Bearer {accessToken}"
+ * }
+ *
+ * URL Parameters:
+ * - post_id: 좋아요 취소할 게시글 ID
+ */
+apiRouter.delete("/post/:post_id/unheart", (req, res) => {
+  try {
+    // 1. Authorization 헤더에서 토큰 추출 및 검증
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        message: "인증 토큰이 필요합니다.",
+      });
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+
+    if (!decoded) {
+      return res.status(401).json({
+        message: "유효하지 않은 토큰입니다.",
+      });
+    }
+
+    const { post_id } = req.params;
+
+    // 2. DB에서 게시글 조회
+    const db = router.db;
+    const post = db.get("posts").find({ id: post_id }).value();
+
+    // 3. 게시글이 존재하지 않을 때
+    if (!post) {
+      return res.status(404).json({
+        message: "존재하지 않는 게시글입니다.",
+      });
+    }
+
+    // 4. 현재 사용자 정보 조회
+    const currentUser = db.get("users").find({ _id: decoded._id }).value();
+
+    if (!currentUser) {
+      return res.status(404).json({
+        message: "사용자를 찾을 수 없습니다.",
+      });
+    }
+
+    // 5. 좋아요 확인 및 제거
+    const existingHeart = db
+      .get("hearts")
+      .find({ postId: post_id, userId: decoded._id })
+      .value();
+
+    let heartCount = post.heartCount || 0;
+
+    if (existingHeart) {
+      // 좋아요 제거
+      db.get("hearts").remove({ postId: post_id, userId: decoded._id }).write();
+
+      heartCount = Math.max(0, heartCount - 1);
+    }
+
+    // 6. 게시글의 heartCount 업데이트
+    db.get("posts")
+      .find({ id: post_id })
+      .assign({ heartCount: heartCount, hearted: false })
+      .write();
+
+    // 7. 업데이트된 게시글 조회
+    const updatedPost = db.get("posts").find({ id: post_id }).value();
+
+    // 8. 작성자 정보 조회
+    const author = db.get("users").find({ _id: updatedPost.authorId }).value();
+
+    if (!author) {
+      return res.status(404).json({
+        message: "작성자를 찾을 수 없습니다.",
+      });
+    }
+
+    // 9. author 정보 구성
+    const currentUserFollowing = currentUser.following || [];
+    const authorFollowing = author.following || [];
+    const authorFollower = author.follower || [];
+    const isfollow = currentUserFollowing.includes(author._id);
+
+    const postDetail = {
+      id: updatedPost.id,
+      content: updatedPost.content,
+      image: updatedPost.image,
+      createdAt: updatedPost.createdAt,
+      updatedAt: updatedPost.updatedAt,
+      hearted: false,
+      heartCount: heartCount,
+      commentCount: updatedPost.commentCount,
+      author: {
+        _id: author._id,
+        username: author.username,
+        accountname: author.accountname,
+        intro: author.intro || "",
+        image: author.image || "",
+        isfollow: isfollow,
+        following: authorFollowing,
+        follower: authorFollower,
+        followerCount: authorFollower.length,
+        followingCount: authorFollowing.length,
+      },
+    };
+
+    // 10. 성공 응답
+    res.status(200).json({
+      post: postDetail,
+    });
+  } catch (error) {
+    console.error("게시글 좋아요 취소 오류:", error);
+    res.status(500).json({
+      message: "서버 오류가 발생했습니다.",
+    });
+  }
+});
+
 // ============================================
 // json-server 라우터 (REST API 자동 생성)
 // ============================================
