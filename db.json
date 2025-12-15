@@ -80,5 +80,16 @@
       "postId": "1765773135857jt36deem4",
       "authorId": "1763716649507farib3dpj"
     }
+  ],
+  "products": [
+    {
+      "id": "1765778790114krrh9k575",
+      "itemName": "상품이름",
+      "price": 10000,
+      "link": "http://",
+      "itemImage": "image",
+      "authorId": "1763716649507farib3dpj",
+      "createdAt": "2025-12-15T06:06:30.114Z"
+    }
   ]
 }

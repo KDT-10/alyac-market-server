@@ -2602,6 +2602,554 @@ apiRouter.post("/post/:post_id/comments/:comment_id/report", (req, res) => {
   }
 });
 
+/**
+ * POST /api/product - 상품 등록 API
+ *
+ * Headers:
+ * {
+ *   "Authorization": "Bearer {accessToken}"
+ * }
+ *
+ * Request Body:
+ * {
+ *   "product": {
+ *     "itemName": String,
+ *     "price": Number (1원 이상),
+ *     "link": String,
+ *     "itemImage": String
+ *   }
+ * }
+ */
+apiRouter.post("/product", (req, res) => {
+  try {
+    // 1. Authorization 헤더에서 토큰 추출 및 검증
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        message: "인증 토큰이 필요합니다.",
+      });
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+
+    if (!decoded) {
+      return res.status(401).json({
+        message: "유효하지 않은 토큰입니다.",
+      });
+    }
+
+    const { product } = req.body;
+
+    // 2. Request Body 검증
+    if (!product) {
+      return res.status(400).json({
+        message: "잘못된 요청입니다.",
+      });
+    }
+
+    // 3. 필수 입력사항 체크
+    if (
+      !product.itemName ||
+      product.price === undefined ||
+      product.price === null ||
+      !product.link ||
+      !product.itemImage
+    ) {
+      return res.status(400).json({
+        message: "필수 입력사항을 입력해주세요.",
+      });
+    }
+
+    // 4. price가 숫자인지 확인
+    if (typeof product.price !== "number" || isNaN(product.price)) {
+      return res.status(400).json({
+        message: "가격은 숫자로 입력하셔야 합니다.",
+      });
+    }
+
+    // 5. price가 1원 이상인지 확인
+    if (product.price < 1) {
+      return res.status(400).json({
+        message: "가격은 1원 이상이어야 합니다.",
+      });
+    }
+
+    // 6. DB에서 작성자 정보 조회
+    const db = router.db;
+    const author = db.get("users").find({ _id: decoded._id }).value();
+
+    if (!author) {
+      return res.status(404).json({
+        message: "사용자를 찾을 수 없습니다.",
+      });
+    }
+
+    // 7. 새 상품 생성
+    const newProduct = {
+      id: generateId(),
+      itemName: product.itemName,
+      price: product.price,
+      link: product.link,
+      itemImage: product.itemImage,
+      authorId: author._id,
+      createdAt: new Date().toISOString(),
+    };
+
+    // 8. DB에 상품 추가
+    db.get("products").push(newProduct).write();
+
+    // 9. author 정보 구성
+    const authorFollowing = author.following || [];
+    const authorFollower = author.follower || [];
+
+    const productResponse = {
+      id: newProduct.id,
+      itemName: newProduct.itemName,
+      price: newProduct.price,
+      link: newProduct.link,
+      itemImage: newProduct.itemImage,
+      author: {
+        _id: author._id,
+        username: author.username,
+        accountname: author.accountname,
+        intro: author.intro || "",
+        image: author.image || "",
+        isfollow: false, // 자기 자신의 상품이므로 false
+        following: authorFollowing,
+        follower: authorFollower,
+        followerCount: authorFollower.length,
+        followingCount: authorFollowing.length,
+      },
+    };
+
+    // 10. 성공 응답
+    res.status(201).json({
+      product: productResponse,
+    });
+  } catch (error) {
+    console.error("상품 등록 오류:", error);
+    res.status(500).json({
+      message: "서버 오류가 발생했습니다.",
+    });
+  }
+});
+
+/**
+ * GET /api/product/:accountname - 상품 리스트 조회 API
+ *
+ * Headers (Optional):
+ * {
+ *   "Authorization": "Bearer {accessToken}"
+ * }
+ *
+ * URL Parameters:
+ * - accountname: 조회할 사용자의 계정ID
+ *
+ * Query Parameters:
+ * - limit: 조회할 개수 (기본값: 10)
+ * - skip: 건너뛸 개수 (기본값: 0)
+ */
+apiRouter.get("/product/:accountname", (req, res) => {
+  try {
+    const { accountname } = req.params;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = parseInt(req.query.skip) || 0;
+
+    // 1. DB에서 accountname으로 사용자 찾기
+    const db = router.db;
+    const targetUser = db
+      .get("users")
+      .find({ accountname: accountname })
+      .value();
+
+    // 2. 사용자가 존재하지 않을 때도 빈 배열 반환
+    if (!targetUser) {
+      return res.status(200).json({
+        data: 0,
+        product: [],
+      });
+    }
+
+    // 3. 현재 로그인한 사용자 확인 (선택적)
+    let currentUser = null;
+    const authHeader = req.headers.authorization;
+
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.substring(7);
+      const decoded = verifyToken(token);
+
+      if (decoded) {
+        currentUser = db.get("users").find({ _id: decoded._id }).value();
+      }
+    }
+
+    const currentUserFollowing = currentUser?.following || [];
+
+    // 4. 모든 상품 가져오기
+    const allProducts = db.get("products").value();
+
+    // 5. 해당 사용자의 상품만 필터링
+    const userProducts = allProducts.filter(
+      (product) => product.authorId === targetUser._id
+    );
+
+    // 6. 전체 상품 개수
+    const totalCount = userProducts.length;
+
+    // 7. createdAt 기준으로 최신순 정렬
+    const sortedProducts = userProducts.sort((a, b) => {
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+    // 8. 페이지네이션 적용
+    const paginatedProducts = sortedProducts.slice(skip, skip + limit);
+
+    // 9. 각 상품에 author 정보 추가
+    const authorFollowing = targetUser.following || [];
+    const authorFollower = targetUser.follower || [];
+    const isfollow = currentUserFollowing.includes(targetUser._id);
+
+    const productsWithAuthor = paginatedProducts.map((product) => {
+      return {
+        id: product.id,
+        itemName: product.itemName,
+        price: product.price,
+        link: product.link,
+        itemImage: product.itemImage,
+        author: {
+          _id: targetUser._id,
+          username: targetUser.username,
+          accountname: targetUser.accountname,
+          intro: targetUser.intro || "",
+          image: targetUser.image || "",
+          isfollow: isfollow,
+          following: authorFollowing,
+          follower: authorFollower,
+          followerCount: authorFollower.length,
+          followingCount: authorFollowing.length,
+        },
+      };
+    });
+
+    // 10. 성공 응답
+    res.status(200).json({
+      data: totalCount,
+      product: productsWithAuthor,
+    });
+  } catch (error) {
+    console.error("상품 리스트 조회 오류:", error);
+    res.status(500).json({
+      message: "서버 오류가 발생했습니다.",
+    });
+  }
+});
+
+/**
+ * GET /api/product/detail/:product_id - 상품 상세 조회 API
+ *
+ * Headers (Optional):
+ * {
+ *   "Authorization": "Bearer {accessToken}"
+ * }
+ *
+ * URL Parameters:
+ * - product_id: 조회할 상품 ID
+ */
+apiRouter.get("/product/detail/:product_id", (req, res) => {
+  try {
+    const { product_id } = req.params;
+
+    // 1. DB에서 상품 조회
+    const db = router.db;
+    const product = db.get("products").find({ id: product_id }).value();
+
+    // 2. 상품이 존재하지 않을 때
+    if (!product) {
+      return res.status(404).json({
+        message: "존재하지 않는 상품입니다.",
+      });
+    }
+
+    // 3. 작성자 정보 조회
+    const author = db.get("users").find({ _id: product.authorId }).value();
+
+    if (!author) {
+      return res.status(404).json({
+        message: "작성자를 찾을 수 없습니다.",
+      });
+    }
+
+    // 4. 현재 로그인한 사용자 확인 (선택적)
+    let currentUser = null;
+    const authHeader = req.headers.authorization;
+
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.substring(7);
+      const decoded = verifyToken(token);
+
+      if (decoded) {
+        currentUser = db.get("users").find({ _id: decoded._id }).value();
+      }
+    }
+
+    const currentUserFollowing = currentUser?.following || [];
+
+    // 5. author 정보 구성
+    const authorFollowing = author.following || [];
+    const authorFollower = author.follower || [];
+    const isfollow = currentUserFollowing.includes(author._id);
+
+    const productDetail = {
+      id: product.id,
+      itemName: product.itemName,
+      price: product.price,
+      link: product.link,
+      itemImage: product.itemImage,
+      author: {
+        _id: author._id,
+        username: author.username,
+        accountname: author.accountname,
+        intro: author.intro || "",
+        image: author.image || "",
+        isfollow: isfollow,
+        following: authorFollowing,
+        follower: authorFollower,
+        followerCount: authorFollower.length,
+        followingCount: authorFollowing.length,
+      },
+    };
+
+    // 6. 성공 응답
+    res.status(200).json({
+      product: productDetail,
+    });
+  } catch (error) {
+    console.error("상품 상세 조회 오류:", error);
+    res.status(500).json({
+      message: "서버 오류가 발생했습니다.",
+    });
+  }
+});
+
+/**
+ * PUT /api/product/:product_id - 상품 수정 API
+ *
+ * Headers:
+ * {
+ *   "Authorization": "Bearer {accessToken}"
+ * }
+ *
+ * URL Parameters:
+ * - product_id: 수정할 상품 ID
+ *
+ * Request Body:
+ * {
+ *   "product": {
+ *     "itemName": String,
+ *     "price": Number,
+ *     "link": String,
+ *     "itemImage": String
+ *   }
+ * }
+ */
+apiRouter.put("/product/:product_id", (req, res) => {
+  try {
+    // 1. Authorization 헤더에서 토큰 추출 및 검증
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        message: "인증 토큰이 필요합니다.",
+      });
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+
+    if (!decoded) {
+      return res.status(401).json({
+        message: "유효하지 않은 토큰입니다.",
+      });
+    }
+
+    const { product_id } = req.params;
+    const { product } = req.body;
+
+    // 2. Request Body 검증
+    if (!product) {
+      return res.status(400).json({
+        message: "잘못된 요청입니다.",
+      });
+    }
+
+    // 3. DB에서 상품 조회
+    const db = router.db;
+    const existingProduct = db.get("products").find({ id: product_id }).value();
+
+    // 4. 상품이 존재하지 않을 때
+    if (!existingProduct) {
+      return res.status(404).json({
+        message: "등록된 상품이 없습니다.",
+      });
+    }
+
+    // 5. 작성자 본인 확인
+    if (existingProduct.authorId !== decoded._id) {
+      return res.status(403).json({
+        message: "잘못된 요청입니다. 로그인 정보를 확인하세요.",
+      });
+    }
+
+    // 6. price 검증 (제공된 경우)
+    if (product.price !== undefined) {
+      if (typeof product.price !== "number" || isNaN(product.price)) {
+        return res.status(400).json({
+          message: "가격은 숫자로 입력하셔야 합니다.",
+        });
+      }
+      if (product.price < 1) {
+        return res.status(400).json({
+          message: "가격은 1원 이상이어야 합니다.",
+        });
+      }
+    }
+
+    // 7. 상품 업데이트
+    const updatedData = {
+      itemName:
+        product.itemName !== undefined
+          ? product.itemName
+          : existingProduct.itemName,
+      price:
+        product.price !== undefined ? product.price : existingProduct.price,
+      link: product.link !== undefined ? product.link : existingProduct.link,
+      itemImage:
+        product.itemImage !== undefined
+          ? product.itemImage
+          : existingProduct.itemImage,
+    };
+
+    db.get("products").find({ id: product_id }).assign(updatedData).write();
+
+    // 8. 업데이트된 상품 다시 조회
+    const updatedProduct = db.get("products").find({ id: product_id }).value();
+
+    // 9. 작성자 정보 조회
+    const author = db
+      .get("users")
+      .find({ _id: updatedProduct.authorId })
+      .value();
+
+    if (!author) {
+      return res.status(404).json({
+        message: "작성자를 찾을 수 없습니다.",
+      });
+    }
+
+    // 10. author 정보 구성
+    const authorFollowing = author.following || [];
+    const authorFollower = author.follower || [];
+
+    const productDetail = {
+      id: updatedProduct.id,
+      itemName: updatedProduct.itemName,
+      price: updatedProduct.price,
+      link: updatedProduct.link,
+      itemImage: updatedProduct.itemImage,
+      author: {
+        _id: author._id,
+        username: author.username,
+        accountname: author.accountname,
+        intro: author.intro || "",
+        image: author.image || "",
+        isfollow: false, // 자기 자신의 상품이므로 false
+        following: authorFollowing,
+        follower: authorFollower,
+        followerCount: authorFollower.length,
+        followingCount: authorFollowing.length,
+      },
+    };
+
+    // 11. 성공 응답
+    res.status(200).json({
+      product: productDetail,
+    });
+  } catch (error) {
+    console.error("상품 수정 오류:", error);
+    res.status(500).json({
+      message: "서버 오류가 발생했습니다.",
+    });
+  }
+});
+
+/**
+ * DELETE /api/product/:product_id - 상품 삭제 API
+ *
+ * Headers:
+ * {
+ *   "Authorization": "Bearer {accessToken}"
+ * }
+ *
+ * URL Parameters:
+ * - product_id: 삭제할 상품 ID
+ */
+apiRouter.delete("/product/:product_id", (req, res) => {
+  try {
+    // 1. Authorization 헤더에서 토큰 추출 및 검증
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        message: "인증 토큰이 필요합니다.",
+      });
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+
+    if (!decoded) {
+      return res.status(401).json({
+        message: "유효하지 않은 토큰입니다.",
+      });
+    }
+
+    const { product_id } = req.params;
+
+    // 2. DB에서 상품 조회
+    const db = router.db;
+    const existingProduct = db.get("products").find({ id: product_id }).value();
+
+    // 3. 상품이 존재하지 않을 때
+    if (!existingProduct) {
+      return res.status(404).json({
+        message: "등록된 상품이 없습니다.",
+      });
+    }
+
+    // 4. 작성자 본인 확인
+    if (existingProduct.authorId !== decoded._id) {
+      return res.status(403).json({
+        message: "잘못된 요청입니다. 로그인 정보를 확인하세요.",
+      });
+    }
+
+    // 5. 상품 삭제
+    db.get("products").remove({ id: product_id }).write();
+
+    // 6. 성공 응답
+    res.status(200).json({
+      message: "삭제되었습니다.",
+    });
+  } catch (error) {
+    console.error("상품 삭제 오류:", error);
+    res.status(500).json({
+      message: "서버 오류가 발생했습니다.",
+    });
+  }
+});
+
 // ============================================
 // json-server 라우터 (REST API 자동 생성)
 // ============================================
