@@ -344,6 +344,48 @@ apiRouter.get("/user/myinfo", (req, res) => {
 });
 
 /**
+ * GET /api/user/checktoken - 토큰 검증 API
+ *
+ * Headers:
+ * {
+ *   "Authorization": "Bearer {accessToken}"
+ * }
+ */
+apiRouter.get("/user/checktoken", (req, res) => {
+  try {
+    // 1. Authorization 헤더에서 토큰 추출
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(200).json({
+        isValid: false,
+      });
+    }
+
+    const token = authHeader.substring(7); // "Bearer " 제거
+
+    // 2. 토큰 검증
+    const decoded = verifyToken(token);
+
+    if (!decoded) {
+      return res.status(200).json({
+        isValid: false,
+      });
+    }
+
+    // 3. 토큰이 유효한 경우
+    res.status(200).json({
+      isValid: true,
+    });
+  } catch (error) {
+    console.error("토큰 검증 오류:", error);
+    res.status(200).json({
+      isValid: false,
+    });
+  }
+});
+
+/**
  * POST /api/user/emailvalid - 이메일 중복 확인 API
  *
  * Request Body:
