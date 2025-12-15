@@ -343,6 +343,111 @@ apiRouter.get("/user/myinfo", (req, res) => {
   }
 });
 
+/**
+ * POST /api/user/emailvalid - 이메일 중복 확인 API
+ *
+ * Request Body:
+ * {
+ *   "user": {
+ *     "email": String (required)
+ *   }
+ * }
+ */
+apiRouter.post("/user/emailvalid", (req, res) => {
+  try {
+    const { user } = req.body;
+
+    // 1. 이메일 입력 확인
+    if (!user || !user.email) {
+      return res.status(400).json({
+        message: "잘못된 접근입니다.",
+      });
+    }
+
+    // 2. 이메일 형식 검증
+    if (!isValidEmail(user.email)) {
+      return res.status(400).json({
+        message: "잘못된 접근입니다.",
+      });
+    }
+
+    // 3. DB에서 이메일 중복 확인
+    const db = router.db;
+    const existingEmail = db.get("users").find({ email: user.email }).value();
+
+    // 4. 이메일 중복 여부에 따른 응답
+    if (existingEmail) {
+      return res.status(200).json({
+        message: "이미 가입된 이메일 주소 입니다.",
+      });
+    }
+
+    // 5. 사용 가능한 이메일
+    res.status(200).json({
+      message: "사용 가능한 이메일 입니다.",
+    });
+  } catch (error) {
+    console.error("이메일 확인 오류:", error);
+    res.status(500).json({
+      message: "서버 오류가 발생했습니다.",
+    });
+  }
+});
+
+/**
+ * POST /api/user/accountnamevalid - 계정ID 중복 확인 API
+ *
+ * Request Body:
+ * {
+ *   "user": {
+ *     "accountname": String (required)
+ *   }
+ * }
+ */
+apiRouter.post("/user/accountnamevalid", (req, res) => {
+  try {
+    const { user } = req.body;
+
+    // 1. accountname 입력 확인
+    if (!user || !user.accountname) {
+      return res.status(400).json({
+        message: "잘못된 접근입니다.",
+      });
+    }
+
+    // 2. accountname 형식 검증
+    if (!isValidAccountname(user.accountname)) {
+      return res.status(400).json({
+        message: "잘못된 접근입니다.",
+      });
+    }
+
+    // 3. DB에서 accountname 중복 확인
+    const db = router.db;
+    const existingAccountname = db
+      .get("users")
+      .find({ accountname: user.accountname })
+      .value();
+
+    // 4. accountname 중복 여부에 따른 응답
+    if (existingAccountname) {
+      return res.status(200).json({
+        message: "이미 가입된 계정ID 입니다.",
+      });
+    }
+
+    // 5. 사용 가능한 계정ID
+    res.status(200).json({
+      message: "사용 가능한 계정ID 입니다.",
+    });
+  } catch (error) {
+    console.error("계정ID 확인 오류:", error);
+    res.status(500).json({
+      message: "서버 오류가 발생했습니다.",
+    });
+  }
+});
+
 // ============================================
 // json-server 라우터 (REST API 자동 생성)
 // ============================================
