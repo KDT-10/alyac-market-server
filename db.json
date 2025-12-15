@@ -45,7 +45,7 @@
       "updatedAt": "2025-12-15T04:32:15.856Z",
       "hearted": false,
       "heartCount": 0,
-      "commentCount": 0,
+      "commentCount": 2,
       "authorId": "1763716649507farib3dpj"
     }
   ],
@@ -55,7 +55,30 @@
       "postId": "1765773135857jt36deem4",
       "reporterId": "1763716649507farib3dpj",
       "createdAt": "2025-12-15T04:33:00.224Z"
+    },
+    {
+      "id": "17657779755782z7m7tvsq",
+      "commentId": "1765777020631t6gg2xja0",
+      "postId": "1765773135857jt36deem4",
+      "reporterId": "1763716649507farib3dpj",
+      "createdAt": "2025-12-15T05:52:55.578Z"
     }
   ],
-  "hearts": []
+  "hearts": [],
+  "comments": [
+    {
+      "id": "1765777020631t6gg2xja0",
+      "content": "댓글 - 테스트 내용123",
+      "createdAt": "2025-12-15T05:37:00.631Z",
+      "postId": "1765773135857jt36deem4",
+      "authorId": "1763716649507farib3dpj"
+    },
+    {
+      "id": "1765777617263cq1n26765",
+      "content": "댓글1 - 테스트 내용123",
+      "createdAt": "2025-12-15T05:46:57.263Z",
+      "postId": "1765773135857jt36deem4",
+      "authorId": "1763716649507farib3dpj"
+    }
+  ]
 }

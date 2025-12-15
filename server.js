@@ -2210,6 +2210,398 @@ apiRouter.delete("/post/:post_id/unheart", (req, res) => {
   }
 });
 
+/**
+ * POST /api/post/:post_id/comments - 댓글 작성 API
+ *
+ * Headers:
+ * {
+ *   "Authorization": "Bearer {accessToken}"
+ * }
+ *
+ * URL Parameters:
+ * - post_id: 댓글을 작성할 게시글 ID
+ *
+ * Request Body:
+ * {
+ *   "comment": {
+ *     "content": String
+ *   }
+ * }
+ */
+apiRouter.post("/post/:post_id/comments", (req, res) => {
+  try {
+    // 1. Authorization 헤더에서 토큰 추출 및 검증
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        message: "인증 토큰이 필요합니다.",
+      });
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+
+    if (!decoded) {
+      return res.status(401).json({
+        message: "유효하지 않은 토큰입니다.",
+      });
+    }
+
+    const { post_id } = req.params;
+    const { comment } = req.body;
+
+    // 2. Request Body 검증
+    if (!comment || !comment.content || comment.content.trim() === "") {
+      return res.status(400).json({
+        message: "댓글을 입력해주세요.",
+      });
+    }
+
+    // 3. DB에서 게시글 조회
+    const db = router.db;
+    const post = db.get("posts").find({ id: post_id }).value();
+
+    // 4. 게시글이 존재하지 않을 때
+    if (!post) {
+      return res.status(404).json({
+        message: "존재하지 않는 게시글입니다.",
+      });
+    }
+
+    // 5. 댓글 작성자 정보 조회
+    const author = db.get("users").find({ _id: decoded._id }).value();
+
+    if (!author) {
+      return res.status(404).json({
+        message: "사용자를 찾을 수 없습니다.",
+      });
+    }
+
+    // 6. 새 댓글 생성
+    const newComment = {
+      id: generateId(),
+      content: comment.content,
+      createdAt: new Date().toISOString(),
+      postId: post_id,
+      authorId: author._id,
+    };
+
+    // 7. DB에 댓글 추가
+    db.get("comments").push(newComment).write();
+
+    // 8. 게시글의 commentCount 증가
+    const currentCommentCount = post.commentCount || 0;
+    db.get("posts")
+      .find({ id: post_id })
+      .assign({ commentCount: currentCommentCount + 1 })
+      .write();
+
+    // 9. author 정보 구성
+    const authorFollowing = author.following || [];
+    const authorFollower = author.follower || [];
+
+    const commentResponse = {
+      id: newComment.id,
+      content: newComment.content,
+      createdAt: newComment.createdAt,
+      author: {
+        _id: author._id,
+        username: author.username,
+        accountname: author.accountname,
+        intro: author.intro || "",
+        image: author.image || "",
+        isfollow: false, // 자기 자신의 댓글이므로 false
+        following: authorFollowing,
+        follower: authorFollower,
+        followerCount: authorFollower.length,
+        followingCount: authorFollowing.length,
+      },
+    };
+
+    // 10. 성공 응답
+    res.status(201).json({
+      comment: commentResponse,
+    });
+  } catch (error) {
+    console.error("댓글 작성 오류:", error);
+    res.status(500).json({
+      message: "서버 오류가 발생했습니다.",
+    });
+  }
+});
+
+/**
+ * GET /api/post/:post_id/comments - 댓글 리스트 조회 API
+ *
+ * Headers (Optional):
+ * {
+ *   "Authorization": "Bearer {accessToken}"
+ * }
+ *
+ * URL Parameters:
+ * - post_id: 댓글을 조회할 게시글 ID
+ *
+ * Query Parameters:
+ * - limit: 조회할 개수 (기본값: 10)
+ * - skip: 건너뛸 개수 (기본값: 0)
+ */
+apiRouter.get("/post/:post_id/comments", (req, res) => {
+  try {
+    const { post_id } = req.params;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = parseInt(req.query.skip) || 0;
+
+    // 1. DB에서 게시글 조회
+    const db = router.db;
+    const post = db.get("posts").find({ id: post_id }).value();
+
+    // 2. 게시글이 존재하지 않을 때
+    if (!post) {
+      return res.status(404).json({
+        message: "존재하지 않는 게시글입니다.",
+      });
+    }
+
+    // 3. 현재 로그인한 사용자 확인 (선택적)
+    let currentUser = null;
+    const authHeader = req.headers.authorization;
+
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.substring(7);
+      const decoded = verifyToken(token);
+
+      if (decoded) {
+        currentUser = db.get("users").find({ _id: decoded._id }).value();
+      }
+    }
+
+    const currentUserFollowing = currentUser?.following || [];
+
+    // 4. 해당 게시글의 댓글 필터링
+    const allComments = db.get("comments").value();
+    const postComments = allComments.filter(
+      (comment) => comment.postId === post_id
+    );
+
+    // 5. createdAt 기준으로 오래된순 정렬 (댓글은 보통 오래된순)
+    const sortedComments = postComments.sort((a, b) => {
+      return new Date(a.createdAt) - new Date(b.createdAt);
+    });
+
+    // 6. 페이지네이션 적용
+    const paginatedComments = sortedComments.slice(skip, skip + limit);
+
+    // 7. 각 댓글에 author 정보 추가
+    const commentsWithAuthor = paginatedComments
+      .map((comment) => {
+        const author = db.get("users").find({ _id: comment.authorId }).value();
+
+        if (!author) {
+          return null;
+        }
+
+        const authorFollowing = author.following || [];
+        const authorFollower = author.follower || [];
+        const isfollow = currentUserFollowing.includes(author._id);
+
+        return {
+          id: comment.id,
+          content: comment.content,
+          createdAt: comment.createdAt,
+          author: {
+            _id: author._id,
+            username: author.username,
+            accountname: author.accountname,
+            intro: author.intro || "",
+            image: author.image || "",
+            isfollow: isfollow,
+            following: authorFollowing,
+            follower: authorFollower,
+            followerCount: authorFollower.length,
+            followingCount: authorFollowing.length,
+          },
+        };
+      })
+      .filter((comment) => comment !== null); // null 제거
+
+    // 8. 성공 응답
+    res.status(200).json({
+      comment: commentsWithAuthor,
+    });
+  } catch (error) {
+    console.error("댓글 리스트 조회 오류:", error);
+    res.status(500).json({
+      message: "서버 오류가 발생했습니다.",
+    });
+  }
+});
+
+/**
+ * DELETE /api/post/:post_id/comments/:comment_id - 댓글 삭제 API
+ *
+ * Headers:
+ * {
+ *   "Authorization": "Bearer {accessToken}"
+ * }
+ *
+ * URL Parameters:
+ * - post_id: 게시글 ID
+ * - comment_id: 삭제할 댓글 ID
+ */
+apiRouter.delete("/post/:post_id/comments/:comment_id", (req, res) => {
+  try {
+    // 1. Authorization 헤더에서 토큰 추출 및 검증
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        message: "인증 토큰이 필요합니다.",
+      });
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+
+    if (!decoded) {
+      return res.status(401).json({
+        message: "유효하지 않은 토큰입니다.",
+      });
+    }
+
+    const { post_id, comment_id } = req.params;
+
+    // 2. DB에서 게시글 조회
+    const db = router.db;
+    const post = db.get("posts").find({ id: post_id }).value();
+
+    // 3. 게시글이 존재하지 않을 때
+    if (!post) {
+      return res.status(404).json({
+        message: "존재하지 않는 게시글입니다.",
+      });
+    }
+
+    // 4. DB에서 댓글 조회
+    const comment = db.get("comments").find({ id: comment_id }).value();
+
+    // 5. 댓글이 존재하지 않을 때
+    if (!comment) {
+      return res.status(404).json({
+        message: "댓글이 존재하지 않습니다.",
+      });
+    }
+
+    // 6. 댓글 작성자 본인 확인
+    if (comment.authorId !== decoded._id) {
+      return res.status(403).json({
+        message: "댓글 작성자만 댓글을 삭제할 수 있습니다.",
+      });
+    }
+
+    // 7. 댓글 삭제
+    db.get("comments").remove({ id: comment_id }).write();
+
+    // 8. 게시글의 commentCount 감소
+    const currentCommentCount = post.commentCount || 0;
+    db.get("posts")
+      .find({ id: post_id })
+      .assign({ commentCount: Math.max(0, currentCommentCount - 1) })
+      .write();
+
+    // 9. 성공 응답
+    res.status(200).json({
+      message: "댓글이 삭제되었습니다.",
+    });
+  } catch (error) {
+    console.error("댓글 삭제 오류:", error);
+    res.status(500).json({
+      message: "서버 오류가 발생했습니다.",
+    });
+  }
+});
+
+/**
+ * POST /api/post/:post_id/comments/:comment_id/report - 댓글 신고 API
+ *
+ * Headers:
+ * {
+ *   "Authorization": "Bearer {accessToken}"
+ * }
+ *
+ * URL Parameters:
+ * - post_id: 게시글 ID
+ * - comment_id: 신고할 댓글 ID
+ */
+apiRouter.post("/post/:post_id/comments/:comment_id/report", (req, res) => {
+  try {
+    // 1. Authorization 헤더에서 토큰 추출 및 검증
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        message: "인증 토큰이 필요합니다.",
+      });
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+
+    if (!decoded) {
+      return res.status(401).json({
+        message: "유효하지 않은 토큰입니다.",
+      });
+    }
+
+    const { post_id, comment_id } = req.params;
+
+    // 2. DB에서 게시글 조회
+    const db = router.db;
+    const post = db.get("posts").find({ id: post_id }).value();
+
+    // 3. 게시글이 존재하지 않을 때
+    if (!post) {
+      return res.status(404).json({
+        message: "존재하지 않는 게시글입니다.",
+      });
+    }
+
+    // 4. DB에서 댓글 조회
+    const comment = db.get("comments").find({ id: comment_id }).value();
+
+    // 5. 댓글이 존재하지 않을 때
+    if (!comment) {
+      return res.status(404).json({
+        message: "댓글이 존재하지 않습니다.",
+      });
+    }
+
+    // 6. 신고 정보 생성
+    const newReport = {
+      id: generateId(),
+      commentId: comment_id,
+      postId: post_id,
+      reporterId: decoded._id,
+      createdAt: new Date().toISOString(),
+    };
+
+    // 7. DB에 신고 추가
+    db.get("reports").push(newReport).write();
+
+    // 8. 성공 응답
+    res.status(200).json({
+      report: {
+        comment: comment_id,
+      },
+    });
+  } catch (error) {
+    console.error("댓글 신고 오류:", error);
+    res.status(500).json({
+      message: "서버 오류가 발생했습니다.",
+    });
+  }
+});
+
 // ============================================
 // json-server 라우터 (REST API 자동 생성)
 // ============================================
