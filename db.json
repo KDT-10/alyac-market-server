@@ -24,5 +24,37 @@
         "1763716649507farib3dpj"
       ]
     }
+  ],
+  "posts": [
+    {
+      "id": "176577311389996cukkcwq",
+      "content": "테스트 내용",
+      "image": "",
+      "createdAt": "2025-12-15T04:31:53.899Z",
+      "updatedAt": "2025-12-15T04:31:53.899Z",
+      "hearted": false,
+      "heartCount": 0,
+      "commentCount": 0,
+      "authorId": "1763716649507farib3dpj"
+    },
+    {
+      "id": "1765773135857jt36deem4",
+      "content": "테스트 내용123",
+      "image": "",
+      "createdAt": "2025-12-15T04:32:15.856Z",
+      "updatedAt": "2025-12-15T04:32:15.856Z",
+      "hearted": false,
+      "heartCount": 0,
+      "commentCount": 0,
+      "authorId": "1763716649507farib3dpj"
+    }
+  ],
+  "reports": [
+    {
+      "id": "17657731802244p5rehaal",
+      "postId": "1765773135857jt36deem4",
+      "reporterId": "1763716649507farib3dpj",
+      "createdAt": "2025-12-15T04:33:00.224Z"
+    }
   ]
 }
