@@ -402,14 +402,14 @@ apiRouter.post("/user/emailvalid", (req, res) => {
     // 1. 이메일 입력 확인
     if (!user || !user.email) {
       return res.status(400).json({
-        message: "잘못된 접근입니다.",
+        message: "이메일을 입력해주세요.",
       });
     }
 
     // 2. 이메일 형식 검증
     if (!isValidEmail(user.email)) {
       return res.status(400).json({
-        message: "잘못된 접근입니다.",
+        message: "잘못된 이메일 형식입니다.",
       });
     }
 
@@ -420,13 +420,15 @@ apiRouter.post("/user/emailvalid", (req, res) => {
     // 4. 이메일 중복 여부에 따른 응답
     if (existingEmail) {
       return res.status(200).json({
-        message: "이미 가입된 이메일 주소 입니다.",
+        ok: false,
+        message: "이미 가입된 이메일 주소입니다.",
       });
     }
 
     // 5. 사용 가능한 이메일
     res.status(200).json({
-      message: "사용 가능한 이메일 입니다.",
+      ok: true,
+      message: "사용 가능한 이메일입니다.",
     });
   } catch (error) {
     console.error("이메일 확인 오류:", error);
@@ -453,14 +455,14 @@ apiRouter.post("/user/accountnamevalid", (req, res) => {
     // 1. accountname 입력 확인
     if (!user || !user.accountname) {
       return res.status(400).json({
-        message: "잘못된 접근입니다.",
+        message: "계정ID를 입력해주세요.",
       });
     }
 
     // 2. accountname 형식 검증
     if (!isValidAccountname(user.accountname)) {
       return res.status(400).json({
-        message: "잘못된 접근입니다.",
+        message: "영문, 숫자, 밑줄, 마침표만 사용할 수 있습니다.",
       });
     }
 
@@ -474,13 +476,15 @@ apiRouter.post("/user/accountnamevalid", (req, res) => {
     // 4. accountname 중복 여부에 따른 응답
     if (existingAccountname) {
       return res.status(200).json({
-        message: "이미 가입된 계정ID 입니다.",
+        ok: false,
+        message: "이미 가입된 계정ID입니다.",
       });
     }
 
     // 5. 사용 가능한 계정ID
     res.status(200).json({
-      message: "사용 가능한 계정ID 입니다.",
+      ok: true,
+      message: "사용 가능한 계정ID입니다.",
     });
   } catch (error) {
     console.error("계정ID 확인 오류:", error);
@@ -884,10 +888,10 @@ apiRouter.delete("/profile/:accountname/unfollow", (req, res) => {
 
     // 6. 언팔로우 처리 - 배열에서 제거
     const updatedCurrentUserFollowing = currentUserFollowing.filter(
-      (id) => id !== targetUser._id
+      (id) => id !== targetUser._id,
     );
     const updatedTargetUserFollower = targetUserFollower.filter(
-      (id) => id !== currentUser._id
+      (id) => id !== currentUser._id,
     );
 
     // 7. DB 업데이트 - 현재 사용자의 following 업데이트
@@ -1299,7 +1303,7 @@ apiRouter.post("/post", (req, res) => {
 
     // 9. 성공 응답
     res.status(201).json({
-      post: [responsePost],
+      post: responsePost,
     });
   } catch (error) {
     console.error("게시글 작성 오류:", error);
@@ -1369,7 +1373,7 @@ apiRouter.get("/post/feed", (req, res) => {
 
     // 6. 팔로잉한 사용자의 게시글만 필터링
     const followingPosts = allPosts.filter((post) =>
-      followingIds.includes(post.authorId)
+      followingIds.includes(post.authorId),
     );
 
     // 7. createdAt 기준으로 최신순 정렬
@@ -1484,7 +1488,7 @@ apiRouter.get("/post/:accountname/userpost", (req, res) => {
 
     // 5. 해당 사용자의 게시글만 필터링
     const userPosts = allPosts.filter(
-      (post) => post.authorId === targetUser._id
+      (post) => post.authorId === targetUser._id,
     );
 
     // 6. createdAt 기준으로 최신순 정렬
@@ -1617,7 +1621,7 @@ apiRouter.get("/post/:post_id", (req, res) => {
 
     // 6. 성공 응답
     res.status(200).json({
-      post: [postDetail],
+      post: postDetail,
     });
   } catch (error) {
     console.error("게시글 상세 조회 오류:", error);
@@ -2423,7 +2427,7 @@ apiRouter.get("/post/:post_id/comments", (req, res) => {
     // 4. 해당 게시글의 댓글 필터링
     const allComments = db.get("comments").value();
     const postComments = allComments.filter(
-      (comment) => comment.postId === post_id
+      (comment) => comment.postId === post_id,
     );
 
     // 5. createdAt 기준으로 오래된순 정렬 (댓글은 보통 오래된순)
@@ -2834,7 +2838,7 @@ apiRouter.get("/product/:accountname", (req, res) => {
 
     // 5. 해당 사용자의 상품만 필터링
     const userProducts = allProducts.filter(
-      (product) => product.authorId === targetUser._id
+      (product) => product.authorId === targetUser._id,
     );
 
     // 6. 전체 상품 개수

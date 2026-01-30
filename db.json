@@ -23,6 +23,15 @@
       "follower": [
         "1763716649507farib3dpj"
       ]
+    },
+    {
+      "_id": "17696615580476a60p18bu",
+      "username": "홍길동",
+      "email": "test2@test.com",
+      "accountname": "test123456",
+      "intro": "aaa",
+      "image": "",
+      "password": "11111111"
     }
   ],
   "posts": [
@@ -32,9 +41,9 @@
       "image": "",
       "createdAt": "2025-12-15T04:31:53.899Z",
       "updatedAt": "2025-12-15T04:31:53.899Z",
-      "hearted": false,
-      "heartCount": 0,
-      "commentCount": 0,
+      "hearted": true,
+      "heartCount": 1,
+      "commentCount": 3,
       "authorId": "1763716649507farib3dpj"
     },
     {
@@ -47,6 +56,17 @@
       "heartCount": 0,
       "commentCount": 2,
       "authorId": "1763716649507farib3dpj"
+    },
+    {
+      "id": "1769674577911m46gjud0u",
+      "content": "테스트",
+      "image": "",
+      "createdAt": "2026-01-29T08:16:17.911Z",
+      "updatedAt": "2026-01-29T08:16:17.911Z",
+      "hearted": false,
+      "heartCount": 0,
+      "commentCount": 0,
+      "authorId": "17696615580476a60p18bu"
     }
   ],
   "reports": [
@@ -64,7 +84,14 @@
       "createdAt": "2025-12-15T05:52:55.578Z"
     }
   ],
-  "hearts": [],
+  "hearts": [
+    {
+      "id": "1769730495862vjul09npb",
+      "postId": "176577311389996cukkcwq",
+      "userId": "17696615580476a60p18bu",
+      "createdAt": "2026-01-29T23:48:15.862Z"
+    }
+  ],
   "comments": [
     {
       "id": "1765777020631t6gg2xja0",
@@ -79,6 +106,27 @@
       "createdAt": "2025-12-15T05:46:57.263Z",
       "postId": "1765773135857jt36deem4",
       "authorId": "1763716649507farib3dpj"
+    },
+    {
+      "id": "1769678604606gf0jzc3dt",
+      "content": "댓글1",
+      "createdAt": "2026-01-29T09:23:24.606Z",
+      "postId": "176577311389996cukkcwq",
+      "authorId": "17696615580476a60p18bu"
+    },
+    {
+      "id": "1769678615770iuuebs9bq",
+      "content": "댓글2",
+      "createdAt": "2026-01-29T09:23:35.770Z",
+      "postId": "176577311389996cukkcwq",
+      "authorId": "17696615580476a60p18bu"
+    },
+    {
+      "id": "1769678620190d8twaalye",
+      "content": "댓글3",
+      "createdAt": "2026-01-29T09:23:40.190Z",
+      "postId": "176577311389996cukkcwq",
+      "authorId": "17696615580476a60p18bu"
     }
   ],
   "products": [
