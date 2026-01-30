@@ -2,6 +2,8 @@ const express = require("express");
 const jsonServer = require("json-server");
 const jwt = require("jsonwebtoken");
 const path = require("path");
+const multer = require("multer");
+const fs = require("fs");
 
 const app = express();
 const PORT = 3000;
@@ -82,10 +84,57 @@ function verifyToken(token) {
 }
 
 // ============================================
+// Multer 설정 (이미지 업로드)
+// ============================================
+
+// uploadFiles 디렉토리 확인 및 생성
+const uploadDir = path.join(__dirname, "uploadFiles");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Multer storage 설정
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploadFiles/");
+  },
+  filename: function (req, file, cb) {
+    const timestamp = Date.now();
+    const ext = path.extname(file.originalname);
+    cb(null, `${timestamp}${ext}`);
+  },
+});
+
+// 파일 필터 (이미지만 허용)
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = /jpeg|jpg|png|gif|webp/;
+  const extname = allowedTypes.test(
+    path.extname(file.originalname).toLowerCase(),
+  );
+  const mimetype = allowedTypes.test(file.mimetype);
+
+  if (extname && mimetype) {
+    cb(null, true);
+  } else {
+    cb(new Error("이미지 파일만 업로드 가능합니다."));
+  }
+};
+
+// Multer 인스턴스 생성
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB 제한
+  },
+});
+
+// ============================================
 // 미들웨어 설정
 // ============================================
 app.use(middlewares); // json-server 기본 미들웨어 (CORS, static, logger 등)
 app.use(express.json()); // JSON 파싱
+app.use("/uploadFiles", express.static(path.join(__dirname, "uploadFiles"))); // 업로드된 이미지 정적 제공
 
 // ============================================
 // API 라우터 설정
@@ -95,6 +144,91 @@ const apiRouter = express.Router();
 // ============================================
 // 커스텀 라우트 (json-server 라우터보다 먼저 정의)
 // ============================================
+
+/**
+ * POST /api/image/uploadfile - 단일 이미지 업로드 API
+ *
+ * Content-Type: multipart/form-data
+ * Form Data:
+ * - image: File (이미지 파일)
+ *
+ * Response:
+ * {
+ *   "filename": "업로드된 파일명"
+ * }
+ */
+apiRouter.post("/image/uploadfile", upload.single("image"), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        message: "이미지를 업로드해주세요.",
+      });
+    }
+
+    // 업로드된 파일 정보 반환
+    res.status(200).json({
+      fieldname: req.file.fieldname,
+      originalname: req.file.originalname,
+      encoding: req.file.encoding,
+      mimetype: req.file.mimetype,
+      destination: req.file.destination,
+      filename: req.file.filename,
+      path: req.file.path,
+      size: req.file.size,
+    });
+  } catch (error) {
+    console.error("이미지 업로드 오류:", error);
+    res.status(500).json({
+      message: "서버 오류가 발생했습니다.",
+    });
+  }
+});
+
+/**
+ * POST /api/image/uploadfiles - 다중 이미지 업로드 API
+ *
+ * Content-Type: multipart/form-data
+ * Form Data:
+ * - image: File[] (이미지 파일들, 최대 10개)
+ *
+ * Response:
+ * [
+ *   {
+ *     "filename": "업로드된 파일명1"
+ *   },
+ *   {
+ *     "filename": "업로드된 파일명2"
+ *   }
+ * ]
+ */
+apiRouter.post("/image/uploadfiles", upload.array("image", 10), (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        message: "이미지를 업로드해주세요.",
+      });
+    }
+
+    // 업로드된 파일들 정보 반환
+    const filesInfo = req.files.map((file) => ({
+      fieldname: file.fieldname,
+      originalname: file.originalname,
+      encoding: file.encoding,
+      mimetype: file.mimetype,
+      destination: file.destination,
+      filename: file.filename,
+      path: file.path,
+      size: file.size,
+    }));
+
+    res.status(200).json(filesInfo);
+  } catch (error) {
+    console.error("이미지 업로드 오류:", error);
+    res.status(500).json({
+      message: "서버 오류가 발생했습니다.",
+    });
+  }
+});
 
 /**
  * POST /api/user - 회원가입 API
