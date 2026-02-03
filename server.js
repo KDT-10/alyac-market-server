@@ -4,6 +4,8 @@ const jwt = require("jsonwebtoken");
 const path = require("path");
 const multer = require("multer");
 const fs = require("fs");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./swagger");
 
 const app = express();
 const PORT = 3000;
@@ -3338,6 +3340,11 @@ apiRouter.use(router);
 // ============================================
 // API 라우터를 /api prefix로 마운트
 // ============================================
+// Swagger UI
+// ============================================
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// ============================================
 app.use("/api", apiRouter);
 
 // ============================================
@@ -3345,5 +3352,6 @@ app.use("/api", apiRouter);
 // ============================================
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
+  console.log(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
   console.log(`📚 Available API endpoints:`);
 });
