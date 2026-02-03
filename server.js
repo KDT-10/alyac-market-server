@@ -109,7 +109,7 @@ const storage = multer.diskStorage({
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|gif|webp/;
   const extname = allowedTypes.test(
-    path.extname(file.originalname).toLowerCase(),
+    path.extname(file.originalname).toLowerCase()
   );
   const mimetype = allowedTypes.test(file.mimetype);
 
@@ -1022,10 +1022,10 @@ apiRouter.delete("/profile/:accountname/unfollow", (req, res) => {
 
     // 6. 언팔로우 처리 - 배열에서 제거
     const updatedCurrentUserFollowing = currentUserFollowing.filter(
-      (id) => id !== targetUser._id,
+      (id) => id !== targetUser._id
     );
     const updatedTargetUserFollower = targetUserFollower.filter(
-      (id) => id !== currentUser._id,
+      (id) => id !== currentUser._id
     );
 
     // 7. DB 업데이트 - 현재 사용자의 following 업데이트
@@ -1160,7 +1160,7 @@ apiRouter.get("/profile/:accountname/following", (req, res) => {
       .filter((user) => user !== null); // null 제거 (존재하지 않는 사용자)
 
     // 8. 성공 응답
-    res.status(200).json(followingList);
+    res.status(200).json({ following: followingList });
   } catch (error) {
     console.error("팔로잉 목록 조회 오류:", error);
     res.status(500).json({
@@ -1229,7 +1229,7 @@ apiRouter.get("/profile/:accountname/follower", (req, res) => {
 
     // 6. 페이지네이션 적용하여 follower ID 슬라이스
     const paginatedFollowerIds = followerIds.slice(skip, skip + limit);
-
+    console.log("followerIds", followerIds);
     // 7. 각 follower ID에 해당하는 사용자 정보 조회
     const followerList = paginatedFollowerIds
       .map((followerId) => {
@@ -1258,7 +1258,7 @@ apiRouter.get("/profile/:accountname/follower", (req, res) => {
       .filter((user) => user !== null); // null 제거 (존재하지 않는 사용자)
 
     // 8. 성공 응답
-    res.status(200).json(followerList);
+    res.status(200).json({ follower: followerList });
   } catch (error) {
     console.error("팔로워 목록 조회 오류:", error);
     res.status(500).json({
@@ -1507,7 +1507,7 @@ apiRouter.get("/post/feed", (req, res) => {
 
     // 6. 팔로잉한 사용자의 게시글만 필터링
     const followingPosts = allPosts.filter((post) =>
-      followingIds.includes(post.authorId),
+      followingIds.includes(post.authorId)
     );
 
     // 7. createdAt 기준으로 최신순 정렬
@@ -1622,7 +1622,7 @@ apiRouter.get("/post/:accountname/userpost", (req, res) => {
 
     // 5. 해당 사용자의 게시글만 필터링
     const userPosts = allPosts.filter(
-      (post) => post.authorId === targetUser._id,
+      (post) => post.authorId === targetUser._id
     );
 
     // 6. createdAt 기준으로 최신순 정렬
@@ -1882,7 +1882,7 @@ apiRouter.put("/post/:post_id", (req, res) => {
 
     // 10. 성공 응답
     res.status(200).json({
-      post: [postDetail],
+      post: postDetail,
     });
   } catch (error) {
     console.error("게시글 수정 오류:", error);
@@ -1939,7 +1939,7 @@ apiRouter.delete("/post/:post_id", (req, res) => {
     // 4. 작성자 본인 확인
     if (existingPost.authorId !== decoded._id) {
       return res.status(403).json({
-        message: "잘못된 요청입니다. 로그인 정보를 확인하세요.",
+        message: "게시글 작성자만 게시글을 삭제할 수 있습니다.",
       });
     }
 
@@ -2561,7 +2561,7 @@ apiRouter.get("/post/:post_id/comments", (req, res) => {
     // 4. 해당 게시글의 댓글 필터링
     const allComments = db.get("comments").value();
     const postComments = allComments.filter(
-      (comment) => comment.postId === post_id,
+      (comment) => comment.postId === post_id
     );
 
     // 5. createdAt 기준으로 오래된순 정렬 (댓글은 보통 오래된순)
@@ -2972,7 +2972,7 @@ apiRouter.get("/product/:accountname", (req, res) => {
 
     // 5. 해당 사용자의 상품만 필터링
     const userProducts = allProducts.filter(
-      (product) => product.authorId === targetUser._id,
+      (product) => product.authorId === targetUser._id
     );
 
     // 6. 전체 상품 개수
@@ -3015,7 +3015,7 @@ apiRouter.get("/product/:accountname", (req, res) => {
 
     // 10. 성공 응답
     res.status(200).json({
-      data: totalCount,
+      count: totalCount,
       product: productsWithAuthor,
     });
   } catch (error) {

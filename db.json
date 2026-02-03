@@ -9,7 +9,12 @@
       "image": "",
       "password": "123456",
       "following": [
-        "17657679824677clk03oii"
+        "17657679824677clk03oii",
+        "17696615580476a60p18bu"
+      ],
+      "follower": [
+        "17657679824677clk03oii",
+        "17696615580476a60p18bu"
       ]
     },
     {
@@ -22,6 +27,10 @@
       "password": "123456",
       "follower": [
         "1763716649507farib3dpj"
+      ],
+      "following": [
+        "17696615580476a60p18bu",
+        "1763716649507farib3dpj"
       ]
     },
     {
@@ -29,8 +38,24 @@
       "username": "홍길동",
       "email": "test2@test.com",
       "accountname": "test123456",
-      "intro": "aaa",
-      "image": "",
+      "intro": "국내 최고 보안 백신 솔루션",
+      "image": "uploadFiles/1769760736634.png",
+      "password": "11111111",
+      "follower": [
+        "17657679824677clk03oii",
+        "1763716649507farib3dpj"
+      ],
+      "following": [
+        "1763716649507farib3dpj"
+      ]
+    },
+    {
+      "_id": "17700874960821k1p6c5qm",
+      "username": "홍길동3",
+      "email": "test3@test.com",
+      "accountname": "test333",
+      "intro": "국내 최고 보안 백신 솔루션",
+      "image": "uploadFiles/1770087423719.png",
       "password": "11111111"
     }
   ],
@@ -63,10 +88,54 @@
       "image": "",
       "createdAt": "2026-01-29T08:16:17.911Z",
       "updatedAt": "2026-01-29T08:16:17.911Z",
+      "hearted": true,
+      "heartCount": 1,
+      "commentCount": 2,
+      "authorId": "17696615580476a60p18bu"
+    },
+    {
+      "id": "1769738359498cjuq002rx",
+      "content": "이미지 테스트",
+      "image": "uploadFiles/1769738162748.png,uploadFiles/1769738168158.png",
+      "createdAt": "2026-01-30T01:59:19.498Z",
+      "updatedAt": "2026-01-30T01:59:19.498Z",
+      "hearted": true,
+      "heartCount": 1,
+      "commentCount": 0,
+      "authorId": "17696615580476a60p18bu"
+    },
+    {
+      "id": "1769739827806ufkzw1pkv",
+      "content": "www",
+      "image": "uploadFiles/1769739781408.png,uploadFiles/1769739794147.png",
+      "createdAt": "2026-01-30T02:23:47.806Z",
+      "updatedAt": "2026-01-30T02:23:47.806Z",
+      "hearted": false,
+      "heartCount": 0,
+      "commentCount": 6,
+      "authorId": "17696615580476a60p18bu"
+    },
+    {
+      "id": "17697648009263paj7qvh9",
+      "content": "refetch 테스트12",
+      "image": "uploadFiles/1769910425153.png",
+      "createdAt": "2026-01-30T09:20:00.926Z",
+      "updatedAt": "2026-02-01T01:47:10.392Z",
       "hearted": false,
       "heartCount": 0,
       "commentCount": 0,
       "authorId": "17696615580476a60p18bu"
+    },
+    {
+      "id": "177001353278549waztdt0",
+      "content": "test1 이 입력한 글",
+      "image": "",
+      "createdAt": "2026-02-02T06:25:32.785Z",
+      "updatedAt": "2026-02-02T06:25:32.785Z",
+      "hearted": false,
+      "heartCount": 0,
+      "commentCount": 0,
+      "authorId": "17657679824677clk03oii"
     }
   ],
   "reports": [
@@ -82,6 +151,51 @@
       "postId": "1765773135857jt36deem4",
       "reporterId": "1763716649507farib3dpj",
       "createdAt": "2025-12-15T05:52:55.578Z"
+    },
+    {
+      "id": "1770021290437z1twr7rfl",
+      "commentId": "1769739866643aqevanp8y",
+      "postId": "1769739827806ufkzw1pkv",
+      "reporterId": "1763716649507farib3dpj",
+      "createdAt": "2026-02-02T08:34:50.438Z"
+    },
+    {
+      "id": "17700223050041rx6abjzf",
+      "commentId": "1769739866643aqevanp8y",
+      "postId": "1769739827806ufkzw1pkv",
+      "reporterId": "1763716649507farib3dpj",
+      "createdAt": "2026-02-02T08:51:45.004Z"
+    },
+    {
+      "id": "17700223102847h2yz86nx",
+      "commentId": "1769739866643aqevanp8y",
+      "postId": "1769739827806ufkzw1pkv",
+      "reporterId": "1763716649507farib3dpj",
+      "createdAt": "2026-02-02T08:51:50.284Z"
+    },
+    {
+      "id": "1770024251626kfy8t0nqo",
+      "postId": "17697648009263paj7qvh9",
+      "reporterId": "1763716649507farib3dpj",
+      "createdAt": "2026-02-02T09:24:11.626Z"
+    },
+    {
+      "id": "177002451109923rxxfh2p",
+      "postId": "17697648009263paj7qvh9",
+      "reporterId": "1763716649507farib3dpj",
+      "createdAt": "2026-02-02T09:28:31.099Z"
+    },
+    {
+      "id": "1770078370907hcad53co4",
+      "postId": "177001353278549waztdt0",
+      "reporterId": "1763716649507farib3dpj",
+      "createdAt": "2026-02-03T00:26:10.907Z"
+    },
+    {
+      "id": "1770079530661k9myglg0g",
+      "postId": "177001353278549waztdt0",
+      "reporterId": "1763716649507farib3dpj",
+      "createdAt": "2026-02-03T00:45:30.661Z"
     }
   ],
   "hearts": [
@@ -90,6 +204,18 @@
       "postId": "176577311389996cukkcwq",
       "userId": "17696615580476a60p18bu",
       "createdAt": "2026-01-29T23:48:15.862Z"
+    },
+    {
+      "id": "1769748186327fwwe6r13w",
+      "postId": "1769738359498cjuq002rx",
+      "userId": "17696615580476a60p18bu",
+      "createdAt": "2026-01-30T04:43:06.327Z"
+    },
+    {
+      "id": "1769761510911uphnrf4n2",
+      "postId": "1769674577911m46gjud0u",
+      "userId": "17696615580476a60p18bu",
+      "createdAt": "2026-01-30T08:25:10.911Z"
     }
   ],
   "comments": [
@@ -127,17 +253,105 @@
       "createdAt": "2026-01-29T09:23:40.190Z",
       "postId": "176577311389996cukkcwq",
       "authorId": "17696615580476a60p18bu"
+    },
+    {
+      "id": "1769739866643aqevanp8y",
+      "content": "1",
+      "createdAt": "2026-01-30T02:24:26.643Z",
+      "postId": "1769739827806ufkzw1pkv",
+      "authorId": "17696615580476a60p18bu"
+    },
+    {
+      "id": "17697398680186n87tzcto",
+      "content": "2",
+      "createdAt": "2026-01-30T02:24:28.018Z",
+      "postId": "1769739827806ufkzw1pkv",
+      "authorId": "17696615580476a60p18bu"
+    },
+    {
+      "id": "1769739870492fpa2c0b7e",
+      "content": "2",
+      "createdAt": "2026-01-30T02:24:30.492Z",
+      "postId": "1769739827806ufkzw1pkv",
+      "authorId": "17696615580476a60p18bu"
+    },
+    {
+      "id": "1769739874264s86qyt4x4",
+      "content": "3",
+      "createdAt": "2026-01-30T02:24:34.264Z",
+      "postId": "1769739827806ufkzw1pkv",
+      "authorId": "17696615580476a60p18bu"
+    },
+    {
+      "id": "1769739975577rzs81nxac",
+      "content": "4",
+      "createdAt": "2026-01-30T02:26:15.577Z",
+      "postId": "1769739827806ufkzw1pkv",
+      "authorId": "17696615580476a60p18bu"
+    },
+    {
+      "id": "1769739985384x04sq8smx",
+      "content": "5",
+      "createdAt": "2026-01-30T02:26:25.384Z",
+      "postId": "1769739827806ufkzw1pkv",
+      "authorId": "17696615580476a60p18bu"
+    },
+    {
+      "id": "1769751561249qom02nzpw",
+      "content": "1",
+      "createdAt": "2026-01-30T05:39:21.249Z",
+      "postId": "1769674577911m46gjud0u",
+      "authorId": "17696615580476a60p18bu"
+    },
+    {
+      "id": "1769751562807ijcjzwxek",
+      "content": "2",
+      "createdAt": "2026-01-30T05:39:22.807Z",
+      "postId": "1769674577911m46gjud0u",
+      "authorId": "17696615580476a60p18bu"
+    },
+    {
+      "id": "1769764316599ewbihrapy",
+      "content": "aa",
+      "createdAt": "2026-01-30T09:11:56.599Z",
+      "postId": "1769764310587qcdq83bvq",
+      "authorId": "17696615580476a60p18bu"
+    },
+    {
+      "id": "1769764317568gf91q9fc1",
+      "content": "bb",
+      "createdAt": "2026-01-30T09:11:57.568Z",
+      "postId": "1769764310587qcdq83bvq",
+      "authorId": "17696615580476a60p18bu"
     }
   ],
   "products": [
     {
-      "id": "1765778790114krrh9k575",
-      "itemName": "상품이름",
+      "id": "1769758350286v8piw6asl",
+      "itemName": "테스트 상품",
       "price": 10000,
-      "link": "http://",
-      "itemImage": "image",
-      "authorId": "1763716649507farib3dpj",
-      "createdAt": "2025-12-15T06:06:30.114Z"
+      "link": "http://naver.com",
+      "itemImage": "uploadFiles/1769758339805.png",
+      "authorId": "17696615580476a60p18bu",
+      "createdAt": "2026-01-30T07:32:30.286Z"
+    },
+    {
+      "id": "1769758414230cjsv3b0jr",
+      "itemName": "테스트 상품1",
+      "price": 200000,
+      "link": "http://www.naver.com",
+      "itemImage": "uploadFiles/1769761262370.png",
+      "authorId": "17696615580476a60p18bu",
+      "createdAt": "2026-01-30T07:33:34.230Z"
+    },
+    {
+      "id": "1769760430304gn8pk5mo0",
+      "itemName": "테스트 상품2",
+      "price": 32000,
+      "link": "http://www.naver.com",
+      "itemImage": "uploadFiles/1769760412174.png",
+      "authorId": "17696615580476a60p18bu",
+      "createdAt": "2026-01-30T08:07:10.304Z"
     }
   ]
 }
