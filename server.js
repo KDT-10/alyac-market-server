@@ -20,6 +20,8 @@ const JWT_CONFIG = {
     process.env.REFRESH_TOKEN_SECRET || "your-refresh-token-secret-key",
   ACCESS_TOKEN_EXPIRES_IN: "1h", // 1시간
   REFRESH_TOKEN_EXPIRES_IN: "1d", // 1일
+  // ACCESS_TOKEN_EXPIRES_IN: "1m", // 1분
+  // REFRESH_TOKEN_EXPIRES_IN: "1h", // 1시간
 };
 
 // ============================================
@@ -80,6 +82,15 @@ function generateToken(user, tokenType = "access") {
 function verifyToken(token) {
   try {
     return jwt.verify(token, JWT_CONFIG.ACCESS_TOKEN_SECRET);
+  } catch (error) {
+    return null;
+  }
+}
+
+// Refresh 토큰 검증 함수
+function verifyRefreshToken(token) {
+  try {
+    return jwt.verify(token, JWT_CONFIG.REFRESH_TOKEN_SECRET);
   } catch (error) {
     return null;
   }
@@ -407,6 +418,69 @@ apiRouter.post("/user/signin", (req, res) => {
     });
   } catch (error) {
     console.error("로그인 오류:", error);
+    res.status(500).json({
+      message: "서버 오류가 발생했습니다.",
+    });
+  }
+});
+
+/**
+ * POST /api/user/refresh - Refresh Token으로 Access Token 재발급 API
+ *
+ * Request Body:
+ * {
+ *   "refreshToken": String (required)
+ * }
+ *
+ * Response:
+ * {
+ *   "accessToken": "새로운 access token",
+ *   "refreshToken": "새로운 refresh token (optional)"
+ * }
+ */
+apiRouter.post("/user/refresh", (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    // 1. Refresh token 존재 여부 확인
+    if (!refreshToken) {
+      return res.status(400).json({
+        message: "Refresh token이 필요합니다.",
+      });
+    }
+
+    // 2. Refresh token 검증
+    const decoded = verifyRefreshToken(refreshToken);
+
+    if (!decoded) {
+      return res.status(401).json({
+        message: "유효하지 않거나 만료된 refresh token입니다.",
+      });
+    }
+
+    // 3. 사용자 정보 조회
+    const db = router.db;
+    const foundUser = db.get("users").find({ _id: decoded._id }).value();
+
+    if (!foundUser) {
+      return res.status(404).json({
+        message: "사용자를 찾을 수 없습니다.",
+      });
+    }
+
+    // 4. 새로운 access token 생성
+    const newAccessToken = generateToken(foundUser, "access");
+
+    // 5. 새로운 refresh token도 함께 생성 (refresh token rotation)
+    const newRefreshToken = generateToken(foundUser, "refresh");
+
+    // 6. 성공 응답
+    res.status(200).json({
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+    });
+  } catch (error) {
+    console.error("Refresh token 처리 오류:", error);
     res.status(500).json({
       message: "서버 오류가 발생했습니다.",
     });

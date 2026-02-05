@@ -385,6 +385,59 @@ const swaggerDefinition = {
         },
       },
     },
+    '/api/user/refresh': {
+      post: {
+        tags: ['User'],
+        summary: 'Refresh access token',
+        description: 'Get new access token using refresh token',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['refreshToken'],
+                properties: {
+                  refreshToken: {
+                    type: 'string',
+                    description: 'Valid refresh token',
+                    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Token refreshed successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    accessToken: {
+                      type: 'string',
+                      description: 'New access token',
+                      example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+                    },
+                    refreshToken: {
+                      type: 'string',
+                      description: 'New refresh token',
+                      example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Refresh token required' },
+          401: { description: 'Invalid or expired refresh token' },
+          404: { description: 'User not found' },
+          500: { description: 'Server error' },
+        },
+      },
+    },
     '/api/user/myinfo': {
       get: {
         tags: ['User'],
