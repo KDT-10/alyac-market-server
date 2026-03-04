@@ -122,7 +122,7 @@ const storage = multer.diskStorage({
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|gif|webp/;
   const extname = allowedTypes.test(
-    path.extname(file.originalname).toLowerCase()
+    path.extname(file.originalname).toLowerCase(),
   );
   const mimetype = allowedTypes.test(file.mimetype);
 
@@ -1098,10 +1098,10 @@ apiRouter.delete("/profile/:accountname/unfollow", (req, res) => {
 
     // 6. 언팔로우 처리 - 배열에서 제거
     const updatedCurrentUserFollowing = currentUserFollowing.filter(
-      (id) => id !== targetUser._id
+      (id) => id !== targetUser._id,
     );
     const updatedTargetUserFollower = targetUserFollower.filter(
-      (id) => id !== currentUser._id
+      (id) => id !== currentUser._id,
     );
 
     // 7. DB 업데이트 - 현재 사용자의 following 업데이트
@@ -1381,7 +1381,10 @@ apiRouter.get("/user/searchuser", (req, res) => {
       return {
         _id: user._id,
         username: user.username,
+        email: user.email,
         accountname: user.accountname,
+        intro: user.intro,
+        image: user.image,
         following: following,
         follower: follower,
         followerCount: follower.length,
@@ -1583,7 +1586,7 @@ apiRouter.get("/post/feed", (req, res) => {
 
     // 6. 팔로잉한 사용자의 게시글만 필터링
     const followingPosts = allPosts.filter((post) =>
-      followingIds.includes(post.authorId)
+      followingIds.includes(post.authorId),
     );
 
     // 7. createdAt 기준으로 최신순 정렬
@@ -1698,7 +1701,7 @@ apiRouter.get("/post/:accountname/userpost", (req, res) => {
 
     // 5. 해당 사용자의 게시글만 필터링
     const userPosts = allPosts.filter(
-      (post) => post.authorId === targetUser._id
+      (post) => post.authorId === targetUser._id,
     );
 
     // 6. createdAt 기준으로 최신순 정렬
@@ -2637,7 +2640,7 @@ apiRouter.get("/post/:post_id/comments", (req, res) => {
     // 4. 해당 게시글의 댓글 필터링
     const allComments = db.get("comments").value();
     const postComments = allComments.filter(
-      (comment) => comment.postId === post_id
+      (comment) => comment.postId === post_id,
     );
 
     // 5. createdAt 기준으로 오래된순 정렬 (댓글은 보통 오래된순)
@@ -3048,7 +3051,7 @@ apiRouter.get("/product/:accountname", (req, res) => {
 
     // 5. 해당 사용자의 상품만 필터링
     const userProducts = allProducts.filter(
-      (product) => product.authorId === targetUser._id
+      (product) => product.authorId === targetUser._id,
     );
 
     // 6. 전체 상품 개수
