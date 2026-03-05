@@ -1602,7 +1602,7 @@ apiRouter.get("/post/feed", (req, res) => {
       .map((post) => {
         const author = db.get("users").find({ _id: post.authorId }).value();
 
-        const isCurrentUserHeart = db
+        const isCurrentUserHearted = db
           .get("hearts")
           .find({ postId: post.id, userId: currentUser._id })
           .value()
@@ -1622,8 +1622,7 @@ apiRouter.get("/post/feed", (req, res) => {
           image: post.image,
           createdAt: post.createdAt,
           updatedAt: post.updatedAt,
-          // hearted: post.hearted, // isCurrentUserHeart,
-          hearted: isCurrentUserHeart,
+          hearted: isCurrentUserHearted,
           heartCount: post.heartCount,
           commentCount: post.commentCount,
           author: {
@@ -1726,7 +1725,7 @@ apiRouter.get("/post/:accountname/userpost", (req, res) => {
     const isfollow = currentUserFollowing.includes(targetUser._id);
 
     const postsWithAuthor = paginatedPosts.map((post) => {
-      const isCurrentUserHeart = db
+      const isCurrentUserHearted = db
         .get("hearts")
         .find({ postId: post.id, userId: currentUser._id })
         .value()
@@ -1738,7 +1737,7 @@ apiRouter.get("/post/:accountname/userpost", (req, res) => {
         image: post.image,
         createdAt: post.createdAt,
         updatedAt: post.updatedAt,
-        hearted: isCurrentUserHeart,
+        hearted: isCurrentUserHearted,
         heartCount: post.heartCount,
         commentCount: post.commentCount,
         author: {
@@ -1823,7 +1822,7 @@ apiRouter.get("/post/:post_id", (req, res) => {
     const authorFollower = author.follower || [];
     const isfollow = currentUserFollowing.includes(author._id);
 
-    const isCurrentUserHeart = db
+    const isCurrentUserHearted = db
       .get("hearts")
       .find({ postId: post.id, userId: currentUser._id })
       .value()
@@ -1836,7 +1835,7 @@ apiRouter.get("/post/:post_id", (req, res) => {
       image: post.image,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
-      hearted: isCurrentUserHeart,
+      hearted: isCurrentUserHearted,
       heartCount: post.heartCount,
       commentCount: post.commentCount,
       author: {
@@ -2176,7 +2175,7 @@ apiRouter.get("/post", (req, res) => {
       .map((post) => {
         const author = db.get("users").find({ _id: post.authorId }).value();
 
-        const isCurrentUserHeart = db
+        const isCurrentUserHearted = db
           .get("hearts")
           .find({ postId: post.id, userId: currentUser._id })
           .value()
@@ -2197,7 +2196,7 @@ apiRouter.get("/post", (req, res) => {
           image: post.image,
           createdAt: post.createdAt,
           updatedAt: post.updatedAt,
-          hearted: isCurrentUserHeart,
+          hearted: isCurrentUserHearted,
           heartCount: post.heartCount,
           commentCount: post.commentCount,
           author: {
