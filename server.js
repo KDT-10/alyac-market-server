@@ -18,10 +18,10 @@ const JWT_CONFIG = {
     process.env.ACCESS_TOKEN_SECRET || "your-access-token-secret-key",
   REFRESH_TOKEN_SECRET:
     process.env.REFRESH_TOKEN_SECRET || "your-refresh-token-secret-key",
-  ACCESS_TOKEN_EXPIRES_IN: "1h", // 1시간
-  REFRESH_TOKEN_EXPIRES_IN: "1d", // 1일
-  // ACCESS_TOKEN_EXPIRES_IN: "1m", // 1분
-  // REFRESH_TOKEN_EXPIRES_IN: "1h", // 1시간
+  // ACCESS_TOKEN_EXPIRES_IN: "1h", // 1시간
+  // REFRESH_TOKEN_EXPIRES_IN: "1d", // 1일
+  ACCESS_TOKEN_EXPIRES_IN: "1m", // 1분
+  REFRESH_TOKEN_EXPIRES_IN: "1h", // 1시간
 };
 
 // ============================================
@@ -858,19 +858,25 @@ apiRouter.get("/profile/:accountname", (req, res) => {
     let isfollow = false;
     const authHeader = req.headers.authorization;
 
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      const token = authHeader.substring(7);
-      const decoded = verifyToken(token);
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        message: "인증 토큰이 필요합니다.",
+      });
+    }
 
-      if (decoded) {
-        // 현재 로그인한 사용자 정보 조회
-        const currentUser = db.get("users").find({ _id: decoded._id }).value();
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
 
-        if (currentUser && currentUser.following) {
-          // 현재 사용자의 following 배열에 targetUser._id가 있는지 확인
-          isfollow = currentUser.following.includes(targetUser._id);
-        }
-      }
+    if (!decoded) {
+      return res.status(401).json({
+        message: "유효하지 않은 토큰입니다.",
+      });
+    }
+
+    const currentUser = db.get("users").find({ _id: decoded._id }).value();
+    if (currentUser && currentUser.following) {
+      // 현재 사용자의 following 배열에 targetUser._id가 있는지 확인
+      isfollow = currentUser.following.includes(targetUser._id);
     }
 
     // 4. following, follower 정보 가져오기
@@ -1191,18 +1197,24 @@ apiRouter.get("/profile/:accountname/following", (req, res) => {
     }
 
     // 5. 현재 로그인한 사용자 확인 (선택적)
-    let currentUser = null;
     const authHeader = req.headers.authorization;
 
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      const token = authHeader.substring(7);
-      const decoded = verifyToken(token);
-
-      if (decoded) {
-        currentUser = db.get("users").find({ _id: decoded._id }).value();
-      }
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        message: "인증 토큰이 필요합니다.",
+      });
     }
 
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+
+    if (!decoded) {
+      return res.status(401).json({
+        message: "유효하지 않은 토큰입니다.",
+      });
+    }
+
+    const currentUser = db.get("users").find({ _id: decoded._id }).value();
     const currentUserFollowing = currentUser?.following || [];
 
     // 6. 페이지네이션 적용하여 following ID 슬라이스
@@ -1289,18 +1301,24 @@ apiRouter.get("/profile/:accountname/follower", (req, res) => {
     }
 
     // 5. 현재 로그인한 사용자 확인 (선택적)
-    let currentUser = null;
     const authHeader = req.headers.authorization;
 
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      const token = authHeader.substring(7);
-      const decoded = verifyToken(token);
-
-      if (decoded) {
-        currentUser = db.get("users").find({ _id: decoded._id }).value();
-      }
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        message: "인증 토큰이 필요합니다.",
+      });
     }
 
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+
+    if (!decoded) {
+      return res.status(401).json({
+        message: "유효하지 않은 토큰입니다.",
+      });
+    }
+
+    const currentUser = db.get("users").find({ _id: decoded._id }).value();
     const currentUserFollowing = currentUser?.following || [];
 
     // 6. 페이지네이션 적용하여 follower ID 슬라이스
@@ -1689,18 +1707,24 @@ apiRouter.get("/post/:accountname/userpost", (req, res) => {
     }
 
     // 3. 현재 로그인한 사용자 확인 (선택적)
-    let currentUser = null;
     const authHeader = req.headers.authorization;
 
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      const token = authHeader.substring(7);
-      const decoded = verifyToken(token);
-
-      if (decoded) {
-        currentUser = db.get("users").find({ _id: decoded._id }).value();
-      }
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        message: "인증 토큰이 필요합니다.",
+      });
     }
 
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+
+    if (!decoded) {
+      return res.status(401).json({
+        message: "유효하지 않은 토큰입니다.",
+      });
+    }
+
+    const currentUser = db.get("users").find({ _id: decoded._id }).value();
     const currentUserFollowing = currentUser?.following || [];
 
     // 4. 모든 게시글 가져오기
@@ -1803,18 +1827,24 @@ apiRouter.get("/post/:post_id", (req, res) => {
     }
 
     // 4. 현재 로그인한 사용자 확인 (선택적)
-    let currentUser = null;
     const authHeader = req.headers.authorization;
 
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      const token = authHeader.substring(7);
-      const decoded = verifyToken(token);
-
-      if (decoded) {
-        currentUser = db.get("users").find({ _id: decoded._id }).value();
-      }
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        message: "인증 토큰이 필요합니다.",
+      });
     }
 
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+
+    if (!decoded) {
+      return res.status(401).json({
+        message: "유효하지 않은 토큰입니다.",
+      });
+    }
+
+    const currentUser = db.get("users").find({ _id: decoded._id }).value();
     const currentUserFollowing = currentUser?.following || [];
 
     // 5. author 정보 구성
@@ -2145,18 +2175,24 @@ apiRouter.get("/post", (req, res) => {
 
     // 1. 현재 로그인한 사용자 확인 (선택적)
     const db = router.db;
-    let currentUser = null;
     const authHeader = req.headers.authorization;
 
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      const token = authHeader.substring(7);
-      const decoded = verifyToken(token);
-
-      if (decoded) {
-        currentUser = db.get("users").find({ _id: decoded._id }).value();
-      }
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        message: "인증 토큰이 필요합니다.",
+      });
     }
 
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+
+    if (!decoded) {
+      return res.status(401).json({
+        message: "유효하지 않은 토큰입니다.",
+      });
+    }
+
+    const currentUser = db.get("users").find({ _id: decoded._id }).value();
     const currentUserFollowing = currentUser?.following || [];
 
     // 2. 모든 게시글 가져오기
@@ -2650,18 +2686,24 @@ apiRouter.get("/post/:post_id/comments", (req, res) => {
     }
 
     // 3. 현재 로그인한 사용자 확인 (선택적)
-    let currentUser = null;
     const authHeader = req.headers.authorization;
 
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      const token = authHeader.substring(7);
-      const decoded = verifyToken(token);
-
-      if (decoded) {
-        currentUser = db.get("users").find({ _id: decoded._id }).value();
-      }
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        message: "인증 토큰이 필요합니다.",
+      });
     }
 
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+
+    if (!decoded) {
+      return res.status(401).json({
+        message: "유효하지 않은 토큰입니다.",
+      });
+    }
+
+    const currentUser = db.get("users").find({ _id: decoded._id }).value();
     const currentUserFollowing = currentUser?.following || [];
 
     // 4. 해당 게시글의 댓글 필터링
@@ -3059,18 +3101,24 @@ apiRouter.get("/product/:accountname", (req, res) => {
     }
 
     // 3. 현재 로그인한 사용자 확인 (선택적)
-    let currentUser = null;
     const authHeader = req.headers.authorization;
 
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      const token = authHeader.substring(7);
-      const decoded = verifyToken(token);
-
-      if (decoded) {
-        currentUser = db.get("users").find({ _id: decoded._id }).value();
-      }
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        message: "인증 토큰이 필요합니다.",
+      });
     }
 
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+
+    if (!decoded) {
+      return res.status(401).json({
+        message: "유효하지 않은 토큰입니다.",
+      });
+    }
+
+    const currentUser = db.get("users").find({ _id: decoded._id }).value();
     const currentUserFollowing = currentUser?.following || [];
 
     // 4. 모든 상품 가져오기
@@ -3168,18 +3216,24 @@ apiRouter.get("/product/detail/:product_id", (req, res) => {
     }
 
     // 4. 현재 로그인한 사용자 확인 (선택적)
-    let currentUser = null;
     const authHeader = req.headers.authorization;
 
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      const token = authHeader.substring(7);
-      const decoded = verifyToken(token);
-
-      if (decoded) {
-        currentUser = db.get("users").find({ _id: decoded._id }).value();
-      }
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        message: "인증 토큰이 필요합니다.",
+      });
     }
 
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+
+    if (!decoded) {
+      return res.status(401).json({
+        message: "유효하지 않은 토큰입니다.",
+      });
+    }
+
+    const currentUser = db.get("users").find({ _id: decoded._id }).value();
     const currentUserFollowing = currentUser?.following || [];
 
     // 5. author 정보 구성
