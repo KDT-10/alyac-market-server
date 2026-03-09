@@ -18,10 +18,10 @@ const JWT_CONFIG = {
     process.env.ACCESS_TOKEN_SECRET || "your-access-token-secret-key",
   REFRESH_TOKEN_SECRET:
     process.env.REFRESH_TOKEN_SECRET || "your-refresh-token-secret-key",
-  // ACCESS_TOKEN_EXPIRES_IN: "1h", // 1시간
-  // REFRESH_TOKEN_EXPIRES_IN: "1d", // 1일
-  ACCESS_TOKEN_EXPIRES_IN: "1m", // 1분
-  REFRESH_TOKEN_EXPIRES_IN: "1h", // 1시간
+  ACCESS_TOKEN_EXPIRES_IN: "1h", // 1시간
+  REFRESH_TOKEN_EXPIRES_IN: "1d", // 1일
+  // ACCESS_TOKEN_EXPIRES_IN: "1m", // 1분
+  // REFRESH_TOKEN_EXPIRES_IN: "1h", // 1시간
 };
 
 // ============================================
